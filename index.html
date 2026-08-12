@@ -1,52 +1,305 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#19324D" />
-    <title>البركة للتوزيع</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./responsive.css" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <aside class="sidebar" aria-label="التنقل الرئيسي">
-        <a class="brand" href="#today" aria-label="البركة للتوزيع">
-          <span class="brand-mark">ب</span><span><b>البركة</b><small>للتوزيع</small></span>
-        </a>
-        <nav id="main-nav" class="nav-list"></nav>
-        <div class="sync-card" id="sync-card"><span class="sync-dot"></span><span id="sync-copy">جارِ التحقق من المزامنة</span></div>
-      </aside>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الطلب المسبق - مكتب البركة</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body class="locked">
 
-      <main class="main-content">
-        <header class="topbar">
-          <button class="icon-button menu-button" id="menu-toggle" aria-label="فتح القائمة">☰</button>
-          <div><p class="eyebrow" id="page-kicker">لوحة المتابعة</p><h1 id="page-title">صباح الخير</h1></div>
-          <div class="top-actions"><button class="icon-button" id="print-quick" title="طباعة آخر فاتورة">⌘</button><button class="avatar" title="مسؤول التوزيع">م</button></div>
-        </header>
-        <section id="page-root" class="page-root" aria-live="polite"></section>
-      </main>
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>🔒 تسجيل الدخول</h2>
+    <p>نظام الطلب المسبق</p>
+    <div class="form-group"><label>اسم المستخدم</label><input type="text" id="loginUser" placeholder="اسم المستخدم" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="form-group"><label>كلمة السر</label><input type="password" id="loginPass" placeholder="كلمة السر" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn" onclick="doLogin()">دخول</button>
+    <div class="login-error" id="loginError">❌ اسم المستخدم أو كلمة السر غير صحيحة</div>
+  </div>
+</div>
+
+<div class="header">
+  <div style="display:flex;justify-content:flex-end;max-width:950px;margin:0 auto;"><button class="logout-btn" onclick="doLogout()">🚪 خروج</button></div>
+  <h1>🚚 نظام الطلب المسبق</h1>
+  <p>مكتب البركة - مدينة الموصل - نظام تتبع الطلبات والأرباح</p>
+</div>
+
+<div class="container">
+
+  <div class="stats-grid">
+    <div class="stat-box"><div class="number" id="todayOrders">0</div><div class="label">طلبات اليوم</div></div>
+    <div class="stat-box green"><div class="number" id="todayRevenue">0</div><div class="label">إيراد اليوم</div></div>
+    <div class="stat-box orange"><div class="number" id="todayCost">0</div><div class="label">تكلفة اليوم</div></div>
+    <div class="stat-box" id="todayProfitBox"><div class="number" id="todayProfit">0</div><div class="label">ربح اليوم</div></div>
+    <div class="stat-box purple"><div class="number" id="pendingOrders">0</div><div class="label">طلبات راجعة</div></div>
+    <div class="stat-box blue"><div class="number" id="allTimeProfit">0</div><div class="label">كل الأرباح</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="orders" onclick="showTab('orders')">📋 الطلبات</button>
+    <button class="tab" data-tab="newOrder" onclick="showTab('newOrder')">➕ طلب جديد</button>
+    <button class="tab" data-tab="history" onclick="showTab('history')">📜 الطلبات السابقة</button>
+    <button class="tab" data-tab="returns" onclick="showTab('returns')">🔄 الراجع</button>
+    <button class="tab" data-tab="reports" onclick="showTab('reports')">📊 التقارير</button>
+    <button class="tab" data-tab="invoice" onclick="showTab('invoice')">🧾 الفواتير</button>
+    <button class="tab" data-tab="products" onclick="showTab('products')">🛠️ المنتجات</button>
+    <button class="tab" data-tab="shops" onclick="showTab('shops')">🏪 المحلات</button>
+    <button class="tab" data-tab="reps" onclick="showTab('reps')">👤 المندوبين</button>
+  </div>
+
+  <div id="orders" class="tab-content active">
+    <div class="card">
+      <h2>📋 طلبات اليوم</h2>
+      <div class="search-box"><input type="text" id="searchOrders" placeholder="🔍 ابحث باسم المحل..." oninput="renderOrders()"></div>
+      <div id="ordersList"><div class="empty-state">لا توجد طلبات اليوم.</div></div>
     </div>
+  </div>
 
-    <dialog id="order-dialog" class="modal-dialog">
-      <form method="dialog" id="order-form" class="order-form">
-        <div class="modal-head"><div><p class="eyebrow">تسجيل سريع</p><h2>طلب جديد</h2></div><button class="icon-button" value="cancel" aria-label="إغلاق">×</button></div>
-        <div class="form-grid">
-          <label>المحل<select id="order-shop" required></select></label>
-          <label>المندوب<select id="order-rep"></select></label>
-          <label>تاريخ الطلب<input id="order-date" type="date" required /></label>
-          <label>المنتج<select id="order-product" required></select></label>
-          <label>الكمية<input id="order-quantity" type="number" min="1" value="1" required /></label>
-          <label>ملاحظات<textarea id="order-notes" placeholder="تفاصيل التوصيل أو الدفع"></textarea></label>
+  <div id="newOrder" class="tab-content">
+    <div class="card">
+      <h2>➕ إضافة طلب جديد</h2>
+      <div class="form-group"><label>🏪 اسم المحل</label><select id="shopSelect"><option value="">-- اختر المحل --</option></select></div>
+      <div class="form-group"><label>👤 اسم المندوب</label><select id="repSelect"><option value="">-- اختر المندوب --</option></select></div>
+      <div class="form-group"><label>📅 تاريخ الطلب</label><input type="date" id="orderDate"></div>
+
+      <div class="item-row">
+        <div class="item-row-header"><strong>🧃 العصائر</strong><span class="badge badge-juice">قابل للتعديل من تبويب المنتجات</span></div>
+        <div class="four-col">
+          <div class="form-group"><label>النوع</label><select id="juiceType" onchange="fillJuiceDefaults()"></select></div>
+          <div class="form-group"><label>الكمية</label><input type="number" id="juiceQty" value="0" min="0"></div>
+          <div class="form-group"><label>سعر البيع</label><input type="number" id="juicePrice" value="4000" min="0"></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="addJuiceItem()">➕</button></div>
         </div>
-        <div class="modal-summary"><span>القيمة المتوقعة</span><strong id="order-preview">٠ د.ع</strong></div>
-        <div class="modal-actions"><button class="button button-secondary" value="cancel">إلغاء</button><button class="button button-primary" id="save-order" value="default">حفظ الطلب</button></div>
-      </form>
-    </dialog>
-    <div class="toast-region" id="toast-region" aria-live="polite"></div>
-    <script type="module" src="./js/app.js"></script>
-  </body>
+        <div class="form-group" style="margin-top:6px;"><label>سعر التكلفة (يدوي)</label><input type="number" id="juiceCostPrice" value="3250" min="0"></div>
+        <div class="checkbox-group" style="margin-top:8px;"><input type="checkbox" id="juiceHasGift" onchange="toggleGiftInput('juiceGiftRow')"><label for="juiceHasGift" style="margin:0;">🎁 هل يتضمن هدية؟</label></div>
+        <div class="gift-row" id="juiceGiftRow" style="display:none;">
+          <div class="two-col">
+            <div class="form-group"><label>نوع الهدية</label><select id="juiceGiftType"></select></div>
+            <div class="form-group"><label>عدد الهدايا</label><input type="number" id="juiceGiftQty" value="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-row-header"><strong>🧁 الكب كيك</strong><span class="badge badge-cake">قابل للتعديل من تبويب المنتجات</span></div>
+        <div class="four-col">
+          <div class="form-group"><label>النوع</label><select id="cakeType" onchange="fillCakeDefaults()"></select></div>
+          <div class="form-group"><label>الكمية</label><input type="number" id="cakeQty" value="0" min="0"></div>
+          <div class="form-group"><label>سعر البيع</label><input type="number" id="cakePrice" value="4750" min="0"></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="addCakeItem()">➕</button></div>
+        </div>
+        <div class="form-group" style="margin-top:6px;"><label>سعر التكلفة (يدوي)</label><input type="number" id="cakeCostPrice" value="4125" min="0"></div>
+        <div class="checkbox-group" style="margin-top:8px;"><input type="checkbox" id="cakeHasGift" onchange="toggleGiftInput('cakeGiftRow')"><label for="cakeHasGift" style="margin:0;">🎁 هل يتضمن هدية؟</label></div>
+        <div class="gift-row" id="cakeGiftRow" style="display:none;">
+          <div class="two-col">
+            <div class="form-group"><label>نوع الهدية</label><select id="cakeGiftType"></select></div>
+            <div class="form-group"><label>عدد الهدايا</label><input type="number" id="cakeGiftQty" value="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-row-header"><strong>📦 منتجات أخرى</strong><span class="badge badge-other">قابل للتعديل من تبويب المنتجات</span></div>
+        <div class="four-col">
+          <div class="form-group"><label>النوع</label><select id="otherType" onchange="fillOtherDefaults()"></select></div>
+          <div class="form-group"><label>الكمية</label><select id="otherQty" onchange="updateOtherCalcPreview()"><option value="1">كرتون</option><option value="0.5">نصف كرتون</option></select></div>
+          <div class="form-group"><label>سعر بيع الكرتون</label><input type="number" id="otherSellPrice" value="0" min="0" onchange="updateOtherCalcPreview()"></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn" onclick="addOtherItem()">➕</button></div>
+        </div>
+        <div class="form-group" style="margin-top:6px;"><label>سعر شراء الكرتون</label><input type="number" id="otherCostPrice" value="0" min="0" onchange="updateOtherCalcPreview()"></div>
+        <p style="font-size:0.72rem;color:#888;margin:2px 0 0;">السعرين أعلاه لسعر <strong>الكرتون الكامل</strong> وتتعبى تلقائياً من بيانات المنتج — تكدر تعدلهم يدوياً إذا احتجت.</p>
+        <div class="other-calc-preview" id="otherCalcPreview" style="font-size:0.82rem;color:#1a5276;background:#eaf2f8;border-radius:6px;padding:6px 8px;margin-top:6px;"></div>
+        <div class="checkbox-group" style="margin-top:8px;"><input type="checkbox" id="otherHasGift" onchange="toggleGiftInput('otherGiftRow')"><label for="otherHasGift" style="margin:0;">🎁 هل يتضمن هدية؟</label></div>
+        <div class="gift-row" id="otherGiftRow" style="display:none;">
+          <div class="two-col">
+            <div class="form-group"><label>نوع الهدية</label><select id="otherGiftType"></select></div>
+            <div class="form-group"><label>عدد الهدايا (قطع)</label><input type="number" id="otherGiftQty" value="0" min="0"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="itemsList" style="margin-top:12px;"></div>
+      <div class="form-group"><label>📝 ملاحظات</label><input type="text" id="orderNotes" placeholder="دفع نقدي / آجل / توصيل خاص"></div>
+      <div class="summary-box" id="orderSummary" style="display:none;"><h4>📊 ملخص الطلب</h4><div id="summaryContent"></div></div>
+      <button class="btn" id="saveOrderBtn" onclick="addOrder()" style="margin-top:12px;">💾 حفظ الطلب</button>
+    </div>
+  </div>
+
+  <div id="history" class="tab-content">
+    <div class="card">
+      <h2>📜 سجل جميع الطلبات</h2>
+      <div class="search-box"><input type="text" id="searchHistory" placeholder="🔍 ابحث باسم المحل أو التاريخ..." oninput="renderHistory()"></div>
+      <div id="historyList"><div class="empty-state">لا توجد طلبات سابقة.</div></div>
+    </div>
+  </div>
+
+  <div id="returns" class="tab-content">
+    <div class="card">
+      <h2>🔄 الطلبات الراجعة (غير مستلمة)</h2>
+      <div id="returnsList"><div class="empty-state">لا توجد طلبات راجعة.</div></div>
+    </div>
+  </div>
+
+  <div id="reports" class="tab-content">
+    <div class="card">
+      <h2>📊 التقارير</h2>
+      <div class="report-box">
+        <h3>📅 تقرير يومي (توقيت الموصل)</h3>
+        <div class="form-group"><label>اختر التاريخ</label><input type="date" id="reportDate" onchange="generateDailyReport()"></div>
+        <div id="dailyReport"></div>
+      </div>
+      <div class="report-box">
+        <h3>📆 تقرير شهري</h3>
+        <div class="two-col">
+          <div class="form-group"><label>الشهر</label><select id="reportMonth" onchange="generateMonthlyReport()"><option value="">-- اختر --</option><option value="01">يناير</option><option value="02">فبراير</option><option value="03">مارس</option><option value="04">أبريل</option><option value="05">مايو</option><option value="06">يونيو</option><option value="07">يوليو</option><option value="08">أغسطس</option><option value="09">سبتمبر</option><option value="10">أكتوبر</option><option value="11">نوفمبر</option><option value="12">ديسمبر</option></select></div>
+          <div class="form-group"><label>السنة</label><input type="number" id="reportYear" value="2026" min="2024" max="2030" onchange="generateMonthlyReport()"></div>
+        </div>
+        <div id="monthlyReport"></div>
+      </div>
+      <div class="report-box">
+        <h3>⏰ تقرير الساعة 9 مساءً (توقيت الموصل)</h3>
+        <p style="font-size:0.85rem;color:#666;margin-bottom:10px;">هذا التقرير يظهر تلقائياً عند الساعة 9:00 مساءً بتوقيت بغداد (UTC+3)</p>
+        <div id="nightReport"></div>
+        <button class="btn btn-secondary" onclick="generateNightReport()">📋 عرض تقرير الليلة</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="invoice" class="tab-content">
+    <div class="card">
+      <h2>🧾 طباعة الفواتير</h2>
+      <div class="form-group"><label>🏪 اختر المحل</label><select id="invoiceShop" onchange="previewInvoice()"><option value="">-- اختر المحل --</option></select></div>
+      <div class="form-group"><label>📅 اختر التاريخ (اختياري)</label><input type="date" id="invoiceDate" onchange="previewInvoice()"></div>
+      <div id="invoicePreview"></div>
+    </div>
+  </div>
+
+  <div id="products" class="tab-content">
+    <div class="card">
+      <h2>🧃 إضافة نوع عصير جديد</h2>
+      <div class="three-col">
+        <div class="form-group"><label>اسم النوع</label><input type="text" id="newJuiceName" placeholder="مثال: خوخ"></div>
+        <div class="form-group"><label>سعر التكلفة</label><input type="number" id="newJuiceCost" value="3250" min="0"></div>
+        <div class="form-group"><label>سعر البيع</label><input type="number" id="newJuicePrice" value="4000" min="0"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="addJuiceType()">➕ إضافة نوع عصير</button>
+    </div>
+    <div class="card">
+      <h2>📋 أنواع العصائر</h2>
+      <div id="juiceTypesList"><div class="empty-state">لا توجد أنواع.</div></div>
+    </div>
+    <div class="card">
+      <h2>🧁 إضافة نوع كب كيك جديد</h2>
+      <div class="three-col">
+        <div class="form-group"><label>اسم النوع</label><input type="text" id="newCakeName" placeholder="مثال: فراولة"></div>
+        <div class="form-group"><label>سعر التكلفة</label><input type="number" id="newCakeCost" value="4125" min="0"></div>
+        <div class="form-group"><label>سعر البيع</label><input type="number" id="newCakePrice" value="4750" min="0"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="addCakeType()">➕ إضافة نوع كب كيك</button>
+    </div>
+    <div class="card">
+      <h2>📋 أنواع الكب كيك</h2>
+      <div id="cakeTypesList"><div class="empty-state">لا توجد أنواع.</div></div>
+    </div>
+    <div class="card">
+      <h2>📦 إضافة منتج آخر جديد</h2>
+      <div class="three-col">
+        <div class="form-group"><label>اسم المنتج</label><input type="text" id="newOtherName" placeholder="مثال: سويس رول"></div>
+        <div class="form-group"><label>سعر التكلفة</label><input type="number" id="newOtherCost" value="0" min="0"></div>
+        <div class="form-group"><label>سعر البيع</label><input type="number" id="newOtherPrice" value="0" min="0"></div>
+      </div>
+      <div class="two-col" style="margin-top:6px;">
+        <div class="form-group"><label>باكيتات بالكرتون (اختياري)</label><input type="number" id="newOtherPackets" min="0" placeholder="مثال: 4"></div>
+        <div class="form-group"><label>قطع بالباكيت (اختياري)</label><input type="number" id="newOtherPieces" min="0" placeholder="مثال: 24"></div>
+      </div>
+      <p style="font-size:0.75rem;color:#888;margin:4px 0 0;">إذا عبيت حقول التعبئة: سعري التكلفة والبيع أعلاه يكونوا <strong>للكرتون الكامل</strong> (مو للقطعة). إذا تركتهم فاضيين: السعرين يكونوا للقطعة الواحدة.</p>
+      <button class="btn btn-secondary" onclick="addOtherType()">➕ إضافة منتج</button>
+    </div>
+    <div class="card">
+      <h2>📋 المنتجات الأخرى</h2>
+      <div id="otherTypesList"><div class="empty-state">لا توجد منتجات.</div></div>
+    </div>
+    <div class="card">
+      <h2>🛒 احتياجات الشراء (كم أحتاج من كل نوع)</h2>
+      <div class="form-group"><label>اختر التاريخ</label><input type="date" id="needsDate" onchange="generateNeedsReport()"></div>
+      <div id="needsReport"><div class="empty-state">اختر تاريخاً لعرض الاحتياجات.</div></div>
+    </div>
+  </div>
+
+  <div id="shops" class="tab-content">
+    <div class="card">
+      <h2>🏪 إضافة محل جديد</h2>
+      <div class="form-group"><label>اسم المحل</label><input type="text" id="shopName" placeholder="سوبرماركت النور"></div>
+      <div class="two-col">
+        <div class="form-group"><label>المنطقة</label><input type="text" id="shopArea" placeholder="الجانب الأيمن"></div>
+        <div class="form-group"><label>الهاتف</label><input type="text" id="shopPhone" placeholder="07xx xxx xxxx"></div>
+      </div>
+      <div class="form-group"><label>صاحب المحل</label><input type="text" id="shopOwner" placeholder="اختياري"></div>
+      <div class="form-group"><label>📍 موقع Google Maps</label><div class="location-input"><input type="text" id="shopLocation" placeholder="https://maps.google.com/..."><button class="btn btn-small" onclick="openMapPicker()">🗺️</button></div></div>
+      <button class="btn btn-secondary" onclick="addShop()">➕ إضافة</button>
+    </div>
+    <div class="card">
+      <h2>📍 قائمة المحلات</h2>
+      <div class="search-box"><input type="text" id="searchShops" placeholder="🔍 ابحث..." oninput="renderShops()"></div>
+      <div id="shopsList"><div class="empty-state">لا توجد محلات.</div></div>
+    </div>
+  </div>
+
+  <div id="reps" class="tab-content">
+    <div class="card">
+      <h2>👤 إضافة مندوب جديد</h2>
+      <div class="two-col">
+        <div class="form-group"><label>اسم المندوب</label><input type="text" id="repName" placeholder="اسم المندوب"></div>
+        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="repPhone" placeholder="07xx xxx xxxx"></div>
+      </div>
+      <div class="form-group"><label>المنطقة</label><input type="text" id="repArea" placeholder="المناطق التي يغطيها"></div>
+      <button class="btn btn-secondary" onclick="addRep()">➕ إضافة</button>
+    </div>
+    <div class="card">
+      <h2>📋 قائمة المندوبين</h2>
+      <div id="repsList"><div class="empty-state">لا يوجد مندوبين.</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal تعديل عنصر -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>✏️ تعديل</h3><button class="close-btn" onclick="closeEditModal()">&times;</button></div>
+    <div id="editModalContent"></div>
+  </div>
+</div>
+
+<!-- Modal تعديل المحل -->
+<div class="modal-overlay" id="shopEditModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>✏️ تعديل بيانات المحل</h3><button class="close-btn" onclick="closeShopEditModal()">&times;</button></div>
+    <div id="shopEditModalContent"></div>
+  </div>
+</div>
+
+<!-- Modal تعديل المندوب -->
+<div class="modal-overlay" id="repEditModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>✏️ تعديل بيانات المندوب</h3><button class="close-btn" onclick="closeRepEditModal()">&times;</button></div>
+    <div id="repEditModalContent"></div>
+  </div>
+</div>
+
+<!-- Modal تعديل نوع منتج (عصير/كب كيك) -->
+<div class="modal-overlay" id="productEditModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>✏️ تعديل النوع</h3><button class="close-btn" onclick="closeProductEditModal()">&times;</button></div>
+    <div id="productEditModalContent"></div>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+
+</body>
 </html>
