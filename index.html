@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#19324D" />
+    <title>البركة للتوزيع</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./responsive.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="التنقل الرئيسي">
+        <a class="brand" href="#today" aria-label="البركة للتوزيع">
+          <span class="brand-mark">ب</span><span><b>البركة</b><small>للتوزيع</small></span>
+        </a>
+        <nav id="main-nav" class="nav-list"></nav>
+        <div class="sync-card" id="sync-card"><span class="sync-dot"></span><span id="sync-copy">جارِ التحقق من المزامنة</span></div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="menu-toggle" aria-label="فتح القائمة">☰</button>
+          <div><p class="eyebrow" id="page-kicker">لوحة المتابعة</p><h1 id="page-title">صباح الخير</h1></div>
+          <div class="top-actions"><button class="icon-button" id="print-quick" title="طباعة آخر فاتورة">⌘</button><button class="avatar" title="مسؤول التوزيع">م</button></div>
+        </header>
+        <section id="page-root" class="page-root" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <dialog id="order-dialog" class="modal-dialog">
+      <form method="dialog" id="order-form" class="order-form">
+        <div class="modal-head"><div><p class="eyebrow">تسجيل سريع</p><h2>طلب جديد</h2></div><button class="icon-button" value="cancel" aria-label="إغلاق">×</button></div>
+        <div class="form-grid">
+          <label>المحل<select id="order-shop" required></select></label>
+          <label>المندوب<select id="order-rep"></select></label>
+          <label>تاريخ الطلب<input id="order-date" type="date" required /></label>
+          <label>المنتج<select id="order-product" required></select></label>
+          <label>الكمية<input id="order-quantity" type="number" min="1" value="1" required /></label>
+          <label>ملاحظات<textarea id="order-notes" placeholder="تفاصيل التوصيل أو الدفع"></textarea></label>
+        </div>
+        <div class="modal-summary"><span>القيمة المتوقعة</span><strong id="order-preview">٠ د.ع</strong></div>
+        <div class="modal-actions"><button class="button button-secondary" value="cancel">إلغاء</button><button class="button button-primary" id="save-order" value="default">حفظ الطلب</button></div>
+      </form>
+    </dialog>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
